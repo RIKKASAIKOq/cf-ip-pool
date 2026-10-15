@@ -1,0 +1,108 @@
+name: Build CF IP Pool
+
+on:
+  schedule:
+    # 每 6 小时跑一次 (UTC)
+    - cron: '0 */6 * * *'
+  workflow_dispatch:
+    inputs:
+      sample:
+        description: '每个子网取几个 IP'
+        required: false
+        default: '3'
+      ports:
+        description: '端口(逗号分隔)'
+        required: false
+        default: '443'
+      no_v6:
+        description: '跳过 IPv6 (true/false)'
+        required: false
+        default: 'false'
+      country_mode:
+        description: '国家判定: colo(CF机房,推荐) / geoip(IP注册地)'
+        required: false
+        default: 'colo'
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+
+    steps:
+      # ── 1. 拉代码 ──────────────────────────────────────────────
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      # ── 2. 装 Python 3.11 ──────────────────────────────────────
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      # ── 3. 装 GeoIP 依赖（唯一的外部依赖，缺失时 country_geoip 列留空）──
+      - name: Install deps
+        run: pip install --quiet maxminddb
+
+      # ── 4. 下载 GeoLite2 国家库（约 3.3MB，不提交到仓库，每次现拉）──
+      - name: Download GeoIP database
+        run: |
+          curl -sSL -o GeoLite2-Country.mmdb \
+            https://raw.githubusercontent.com/P3TERX/GeoLite.mmdb/download/GeoLite2-Country.mmdb
+          ls -lh GeoLite2-Country.mmdb
+
+      # ── 5. 没有 config.json 就生成模板（有就沿用，方便仓库里改配置）──
+      - name: Init config from template
+        run: |
+          if [ ! -f config.json ]; then
+            python scripts/build_pool.py --init-config
+          fi
+          cat config.json
+
+      # ── 6. 正式构建 IP 池（核心步骤）──────────────────────────
+      # 手动触发时，填了的输入项会拼成 --xxx 覆盖 config.json；留空则用配置值
+      - name: Build IP pool
+        env:
+          # 强制流/日志用 UTF-8，避免 GH runner 的 C locale 下中文日志报错
+          PYTHONIOENCODING: utf-8
+        run: |
+          # 手动触发时用输入覆盖配置文件
+          EXTRA=""
+          if [ -n "${{ github.event.inputs.sample }}" ]; then EXTRA="$EXTRA --sample ${{ github.event.inputs.sample }}"; fi
+          if [ -n "${{ github.event.inputs.ports }}" ];  then EXTRA="$EXTRA --ports ${{ github.event.inputs.ports }}"; fi
+          if [ -n "${{ github.event.inputs.no_v6 }}" ] && [ "${{ github.event.inputs.no_v6 }}" = "true" ]; then EXTRA="$EXTRA --no-v6"; fi
+          if [ -n "${{ github.event.inputs.country_mode }}" ]; then EXTRA="$EXTRA --country-mode ${{ github.event.inputs.country_mode }}"; fi
+
+          python scripts/build_pool.py --config config.json $EXTRA
+
+      # ── 7. 打印摘要，方便在 Actions 日志里直接看结果 ──────────
+      - name: Show summary
+        run: |
+          echo "=== all.txt 行数 ==="
+          wc -l output/all.txt || true
+          echo "=== 前 10 行 ==="
+          head -n 10 output/all.txt || true
+          echo "=== meta.json ==="
+          cat output/meta.json || true
+
+      # ── 8. 自动提交回仓库（用 Actions 机器人身份，无需 token）──
+      # 只在 output/ 有变化时才提交，避免空 commit 刷历史
+      - name: Commit results
+        run: |
+          git config user.name  "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add output/
+          if git diff --staged --quiet; then
+            echo "no changes"
+          else
+            git commit -m "chore: update CF IP pool $(date -u '+%Y-%m-%d %H:%M UTC')"
+            git push
+          fi
+
+      # ── 9. 上传 artifact（保留 7 天，方便单次下载）────────────
+      - name: Upload artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: cf-ip-pool
+          path: output/
+          retention-days: 7

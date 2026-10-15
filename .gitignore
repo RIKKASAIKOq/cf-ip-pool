@@ -1,0 +1,10 @@
+# GeoIP 数据库（本地下载，不进仓库）
+GeoLite2-Country.mmdb
+
+# Python
+__pycache__/
+*.pyc
+.venv/
+
+# 测试产物
+output_test/

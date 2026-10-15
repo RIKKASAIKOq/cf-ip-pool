@@ -1,0 +1,47 @@
+{
+  "_comment": [
+    "CF IP Pool Builder 配置文件 (JSON)",
+    "用法: python scripts/build_pool.py --config config.json",
+    "命令行参数优先级高于此文件（--sample 会覆盖 sample）",
+    "留空或删除某行 = 用内置默认值"
+  ],
+
+  "_sample": "每个子网取几个 IP：IPv4 固定到 /24 粒度(sample)，IPv6 固定到 /48 粒度(sample_v6)。3 = 每块随机抽 3 个（推荐）",
+  "sample": 3,
+
+  "_sample_v6": "IPv6 每个 /48 取几个 IP（比 IPv4 少，因 CF v6 网段极大）",
+  "sample_v6": 1,
+
+  "_v6_limit": "IPv6 总量上限（跨所有 CF 网段）。v4 按 sample 算约 17868，7:3 对应 v6 约 7650",
+  "v6_limit": 7650,
+
+  "_ports": [
+    "探测端口列表。多端口是级联的：先测第一个，只对存活的 IP 补测后面的，",
+    "所以第一个端口建议放主力。443/8443 都能读 colo(走 TLS)；80 是明文读不到 colo、会被丢弃"
+  ],
+  "ports": [443, 8443],
+
+  "_workers": "并发线程数。太高会打爆本地 TLS/网络资源导致 colo 读不出（实测 800 掉到 27%）。200~300 安全区间",
+  "workers": 200,
+
+  "_outdir": "输出目录（相对于当前工作目录）",
+  "outdir": "output",
+
+  "_mmdb": "GeoIP 数据库路径。文件不存在时 country_geoip 列留空，但 colo 仍正常工作",
+  "mmdb": "GeoLite2-Country.mmdb",
+
+  "_no_v6": "跳过 IPv6 探测。本机无 IPv6 出网时设 true（省约 40% 时间）；GitHub Actions runner 有 IPv6，CI 上保持 false",
+  "no_v6": false,
+
+  "_no_trace": "只测 TCP 连通性，跳过 TLS + colo 读取（更快，但没有国家/机房信息）",
+  "no_trace": false,
+
+  "_country_mode": "国家判定来源: colo=按 CF 实际机房推算(推荐,Anycast 下最贴近真实延迟) / geoip=按 IP 注册地",
+  "country_mode": "colo",
+
+  "_keep_unknown": "保留无法确定国家的 IP（默认 false = 丢弃，数据更干净）",
+  "keep_unknown": false,
+
+  "_seed": "随机种子，用于复现同样的采样结果；null = 每次随机",
+  "seed": null
+}

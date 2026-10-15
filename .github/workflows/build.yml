@@ -25,18 +25,18 @@ on:
 
 jobs:
   build:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     permissions:
       contents: write
 
     steps:
       # ── 1. 拉代码 ──────────────────────────────────────────────
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
 
       # ── 2. 装 Python 3.11 ──────────────────────────────────────
       - name: Setup Python
-        uses: actions/setup-python@v5
+        uses: actions/setup-python@v6
         with:
           python-version: '3.11'
 
@@ -88,6 +88,8 @@ jobs:
       # ── 8. 自动提交回仓库（用 Actions 机器人身份，无需 token）──
       # 只在 output/ 有变化时才提交，避免空 commit 刷历史
       - name: Commit results
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
           git config user.name  "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
@@ -96,12 +98,15 @@ jobs:
             echo "no changes"
           else
             git commit -m "chore: update CF IP pool $(date -u '+%Y-%m-%d %H:%M UTC')"
-            git push
+            git remote set-url origin "https://x-access-token:${GH_TOKEN}@github.com/${{ github.repository }}.git"
+            git push origin HEAD:${{ github.ref_name }}
+            echo "PUSHED: output/ committed to ${{ github.repository }} @ ${{ github.ref_name }}"
           fi
 
       # ── 9. 上传 artifact（保留 7 天，方便单次下载）────────────
+      # 注：这个 zip 只是备用下载通道；真正的产出已经在第 8 步提交进仓库了
       - name: Upload artifact
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v6
         with:
           name: cf-ip-pool
           path: output/

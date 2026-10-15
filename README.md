@@ -13,6 +13,16 @@
 | `output/all_full.csv` | 明细：`ip,port,country,colo,country_geoip,ver` |
 | `output/meta.json` | 元信息：生成时间、总数、国家/机房分布 |
 
+所有 `.txt` 的**第 1 行是 `#` 开头的注释头**，记录生成时间（北京时间）、IP 数和格式说明：
+
+```
+# Cloudflare IP Pool ALL | 2026-10-16 06:21:41 (UTC+8) | 8106 IPs | IP:Port#CC
+172.68.49.182:443#AT
+```
+
+下游解析器都会跳过 `#` 行，不影响使用；但打开文件就能看到这批数据是什么时候出的。
+`all_full.csv` 不加注释头（会破坏 CSV 表头解析），时间看 `meta.json`。
+
 ## 配置
 
 参数通过 `config.toml` 管理，**命令行优先**：
@@ -30,7 +40,7 @@ python scripts/build_pool.py --config other.toml
 
 ```toml
 sample = 3
-ports = [443]
+ports = [443, 8443]
 workers = 200
 outdir = "output"
 mmdb = "GeoLite2-Country.mmdb"
@@ -44,7 +54,7 @@ seed = null
 | 键 | 默认 | 说明 |
 |---|---|---|
 | `sample` | 3 | 每个 /24 或 /48 取几个 IP |
-| `ports` | `[443]` | 端口列表，可写 `[443, 8443]` |
+| `ports` | `[443, 8443]` | 端口列表。这两个都是 TLS 端口，能读到 colo；**80 读不到**（明文不给 trace） |
 | `workers` | 200 | 并发数（过高会丢 colo，200~300 稳） |
 | `outdir` | `output` | 输出目录 |
 | `mmdb` | `GeoLite2-Country.mmdb` | GeoIP 库路径 |

@@ -2,7 +2,8 @@ name: Build CF IP Pool
 
 on:
   schedule:
-    # 每 6 小时跑一次 (UTC)
+    # 每 6 小时跑一次。注意：GitHub cron 走 UTC，不能写 +08:00。
+    # 这里 0/6/12/18 UTC = 北京 08:00 / 14:00 / 20:00 / 次日 02:00
     - cron: '0 */6 * * *'
   workflow_dispatch:
     inputs:
@@ -87,6 +88,7 @@ jobs:
 
       # ── 8. 自动提交回仓库（用 Actions 机器人身份，无需 token）──
       # 只在 output/ 有变化时才提交，避免空 commit 刷历史
+      # 时间戳统一用北京时间（UTC+8），commit message 和 meta.json 保持一致
       - name: Commit results
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
@@ -97,17 +99,9 @@ jobs:
           if git diff --staged --quiet; then
             echo "no changes"
           else
-            git commit -m "chore: update CF IP pool $(date -u '+%Y-%m-%d %H:%M UTC')"
+            STAMP="$(TZ=Asia/Shanghai date '+%Y-%m-%d %H:%M:%S')"
+            git commit -m "chore: update CF IP pool ${STAMP} UTC+8"
             git remote set-url origin "https://x-access-token:${GH_TOKEN}@github.com/${{ github.repository }}.git"
             git push origin HEAD:${{ github.ref_name }}
-            echo "PUSHED: output/ committed to ${{ github.repository }} @ ${{ github.ref_name }}"
+            echo "PUSHED: output/ committed to ${{ github.repository }} @ ${{ github.ref_name }} at ${STAMP} UTC+8"
           fi
-
-      # ── 9. 上传 artifact（保留 7 天，方便单次下载）────────────
-      # 注：这个 zip 只是备用下载通道；真正的产出已经在第 8 步提交进仓库了
-      - name: Upload artifact
-        uses: actions/upload-artifact@v6
-        with:
-          name: cf-ip-pool
-          path: output/
-          retention-days: 7

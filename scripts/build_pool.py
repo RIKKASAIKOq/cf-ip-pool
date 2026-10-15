@@ -605,6 +605,17 @@ def probe_all(ips, port, workers, want_trace=True, label=""):
 
 # ─── 5. 输出 ─────────────────────────────────────────────────────────────────
 
+def _now_cn():
+    """当前北京时间（UTC+8）。CI 与本地都用它，保证时间戳一致。
+    不依赖 tzdata，直接拿 UTC 加 8 小时，避免 Windows/精简容器没有时区库。"""
+    return time.gmtime(time.time() + 8 * 3600)
+
+
+def _stamp_cn():
+    """北京时间字符串，例如 2026-10-16 14:30:05"""
+    return time.strftime("%Y-%m-%d %H:%M:%S", _now_cn())
+
+
 def _split_versions(rows):
     """把 rows 按 IPv4 / IPv6 分开。"""
     v4 = [r for r in rows if ":" not in r["ip"]]
@@ -612,9 +623,18 @@ def _split_versions(rows):
     return v4, v6
 
 
-def _write_list(path, rows):
-    """写 IP:端口#国家 列表文件。"""
+def _write_list(path, rows, stamp=None, kind=""):
+    """写 IP:端口#国家 列表文件。
+
+    首行是注释头（以 # 开头），记录生成时间/行数/视角。
+    下游解析器都会跳过 # 开头的行，所以不影响使用，
+    但打开文件就能看到「这批数据是什么时候出的」。
+    """
     with open(path, "w", encoding="utf-8", newline="\n") as f:
+        if stamp:
+            tag = f" {kind}" if kind else ""
+            f.write(f"# Cloudflare IP Pool{tag} | {stamp} (UTC+8) | "
+                    f"{len(rows)} IPs | IP:Port#CC\n")
         for r in rows:
             f.write(f"{r['ip']}:{r['port']}#{r['country']}\n")
 
@@ -679,6 +699,9 @@ def write_outputs(results, geo, outdir, country_mode="colo", drop_unknown=True):
     rows.sort(key=lambda x: (x["country"], x["colo"], x["ip"]))
     v4_rows, v6_rows = _split_versions(rows)
 
+    # 统一时间戳：文件头、meta.json、提交信息都用它（北京时间 UTC+8）
+    stamp = _stamp_cn()
+
     all_txt     = os.path.join(outdir, "all.txt")
     v4_txt      = os.path.join(outdir, "ipv4.txt")
     v6_txt      = os.path.join(outdir, "ipv6.txt")
@@ -687,18 +710,20 @@ def write_outputs(results, geo, outdir, country_mode="colo", drop_unknown=True):
     meta_json   = os.path.join(outdir, "meta.json")
 
     # 主输出: IP:端口#国家（v4 + v6 混合）
-    _write_list(all_txt, rows)
+    _write_list(all_txt, rows, stamp, "ALL")
 
     # 分版本输出
-    _write_list(v4_txt, v4_rows)
-    _write_list(v6_txt, v6_rows)
+    _write_list(v4_txt, v4_rows, stamp, "IPv4")
+    _write_list(v6_txt, v6_rows, stamp, "IPv6")
 
     # 按机房分组: IP:端口#国家  但排序更直观（同机房聚在一起）
     with open(by_colo_txt, "w", encoding="utf-8", newline="\n") as f:
+        f.write(f"# Cloudflare IP Pool BY-COLO | {stamp} (UTC+8) | "
+                f"{len(rows)} IPs | IP:Port#CC (COLO)\n")
         for r in sorted(rows, key=lambda x: (x["colo"], x["ip"])):
             f.write(f"{r['ip']}:{r['port']}#{r['country']}  ({r['colo']})\n")
 
-    # 明细
+    # 明细（CSV 不加注释头，否则会破坏表头行的解析）
     with open(full_csv, "w", encoding="utf-8", newline="") as f:
         w = csv.DictWriter(f, fieldnames=["ip", "port", "country", "colo",
                                           "country_geoip", "ver"])
@@ -714,7 +739,8 @@ def write_outputs(results, geo, outdir, country_mode="colo", drop_unknown=True):
 
     with open(meta_json, "w", encoding="utf-8") as f:
         json.dump({
-            "generated_at": time.strftime("%Y-%m-%d %H:%M:%S UTC", time.gmtime()),
+            "generated_at": stamp + " UTC+8",
+            "generated_at_utc": time.strftime("%Y-%m-%d %H:%M:%S UTC", time.gmtime()),
             "country_mode": mode_name,
             "total": len(rows),
             "total_ipv4": len(v4_rows),
@@ -727,10 +753,12 @@ def write_outputs(results, geo, outdir, country_mode="colo", drop_unknown=True):
                 "note": "colo depends on the prober's network (CF is Anycast). "
                         "These colo values reflect the machine that ran this probe, "
                         "and may differ from your own network.",
+                "timezone": "UTC+8 (Asia/Shanghai)",
                 "dominant_colos": [c for c, _ in colo_cnt.most_common(5)],
             },
         }, f, ensure_ascii=False, indent=2)
 
+    log(f"      stamp: {stamp} UTC+8")
     log(f"      {all_txt}   ({len(rows)} lines)")
     log(f"      {v4_txt}    ({len(v4_rows)} lines)")
     log(f"      {v6_txt}    ({len(v6_rows)} lines)")

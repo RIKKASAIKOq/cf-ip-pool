@@ -7,21 +7,21 @@ on:
   workflow_dispatch:
     inputs:
       sample:
-        description: '每个子网取几个 IP'
+        description: '每网段IP数(留空用 config.json 里的值)'
         required: false
-        default: '3'
+        default: ''
       ports:
-        description: '端口(逗号分隔)'
+        description: '端口(逗号分隔，留空用 config.json 里的值)'
         required: false
-        default: '443'
+        default: ''
       no_v6:
         description: '跳过 IPv6 (true/false)'
         required: false
         default: 'false'
       country_mode:
-        description: '国家判定: colo(CF机房,推荐) / geoip(IP注册地)'
+        description: '国家判定: colo(CF机房,推荐) / geoip(IP注册地) (留空用 config.json)'
         required: false
-        default: 'colo'
+        default: ''
 
 jobs:
   build:

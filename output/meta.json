@@ -1,45 +1,51 @@
 {
-  "generated_at": "2026-10-16 06:35:15 UTC+8",
-  "generated_at_utc": "2026-10-15 22:35:15 UTC",
+  "generated_at": "2026-10-16 10:48:35 UTC+8",
+  "generated_at_utc": "2026-10-16 02:48:35 UTC",
   "country_mode": "CF colo",
-  "total": 7370,
-  "total_ipv4": 7370,
+  "total": 7359,
+  "total_ipv4": 7359,
   "total_ipv6": 0,
   "countries": {
-    "US": 7067,
-    "CA": 294,
-    "DE": 3,
+    "US": 7344,
+    "FR": 5,
+    "ES": 4,
     "IE": 3,
-    "SE": 3
+    "AU": 1,
+    "CA": 1,
+    "GB": 1
   },
   "countries_ipv4": {
-    "US": 7067,
-    "CA": 294,
-    "DE": 3,
+    "US": 7344,
+    "FR": 5,
+    "ES": 4,
     "IE": 3,
-    "SE": 3
+    "AU": 1,
+    "CA": 1,
+    "GB": 1
   },
   "countries_ipv6": {},
   "colo_top": {
-    "SEA": 7054,
-    "YVR": 294,
-    "ORD": 6,
-    "HAM": 3,
+    "DFW": 7182,
+    "ORD": 96,
+    "MSP": 57,
+    "LAX": 6,
+    "CDG": 5,
+    "MAD": 4,
     "DUB": 3,
-    "ARN": 3,
-    "SJC": 3,
-    "ATL": 2,
-    "MIA": 2
+    "SEA": 3,
+    "SYD": 1,
+    "YYZ": 1,
+    "LHR": 1
   },
   "vantage": {
     "note": "colo depends on the prober's network (CF is Anycast). These colo values reflect the machine that ran this probe, and may differ from your own network.",
     "timezone": "UTC+8 (Asia/Shanghai)",
     "dominant_colos": [
-      "SEA",
-      "YVR",
+      "DFW",
       "ORD",
-      "HAM",
-      "DUB"
+      "MSP",
+      "LAX",
+      "CDG"
     ]
   }
 }

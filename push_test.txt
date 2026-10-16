@@ -1,0 +1,9 @@
+push link test
+=================
+file    : push_test.txt
+purpose : verify the token push chain end-to-end
+repo    : RIKKASAIKOq/cf-ip-pool
+branch  : main
+tool    : scripts/build_pool.py push_outputs() logic
+
+This file is a deliberate, throwaway test artifact. Safe to delete.

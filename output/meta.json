@@ -1,53 +1,20 @@
 {
-  "generated_at": "2026-10-17 00:01:11 UTC+8",
-  "generated_at_utc": "2026-10-16 16:01:11 UTC",
-  "country_mode": "CF colo",
-  "total": 7358,
-  "total_ipv4": 7358,
-  "total_ipv6": 0,
-  "countries": {
-    "US": 7052,
-    "CA": 294,
-    "DE": 6,
-    "IE": 3,
-    "AE": 1,
-    "DK": 1,
-    "IN": 1
+  "generated_at": "2026-10-17 03:10:20 UTC+8",
+  "generated_at_utc": "2026-10-16 19:10:20 UTC",
+  "total": 20000,
+  "unique_ips": 20000,
+  "ports": {
+    "2083": 3399,
+    "2087": 3367,
+    "2096": 3358,
+    "2053": 3354,
+    "8443": 3265,
+    "443": 3257
   },
-  "countries_ipv4": {
-    "US": 7052,
-    "CA": 294,
-    "DE": 6,
-    "IE": 3,
-    "AE": 1,
-    "DK": 1,
-    "IN": 1
-  },
-  "countries_ipv6": {},
-  "colo_top": {
-    "SEA": 7040,
-    "YVR": 294,
-    "ORD": 6,
-    "HAM": 4,
-    "DUB": 3,
-    "SJC": 3,
-    "MUC": 2,
-    "DXB": 1,
-    "CPH": 1,
-    "PNQ": 1,
-    "ATL": 1,
-    "BOS": 1,
-    "IAD": 1
-  },
-  "vantage": {
-    "note": "colo depends on the prober's network (CF is Anycast). These colo values reflect the machine that ran this probe, and may differ from your own network.",
-    "timezone": "UTC+8 (Asia/Shanghai)",
-    "dominant_colos": [
-      "SEA",
-      "YVR",
-      "ORD",
-      "HAM",
-      "DUB"
-    ]
+  "probe": {
+    "mode": "tcp",
+    "workers": 1000,
+    "timeout": 2.0,
+    "target": 20000
   }
 }

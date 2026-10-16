@@ -6,3 +6,4 @@ __pycache__/
 # 测试产物
 output_test/
 out_test/
+tests/

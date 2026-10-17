@@ -3,7 +3,17 @@ __pycache__/
 *.pyc
 .venv/
 
-# 测试产物
-output_test/
-out_test/
-tests/
+# 私有本地配置（含 token，绝不提交）
+gh_config.json
+gh_config.local.json
+config.private.py
+config.private.json
+.env
+.env.*
+
+# 本地测试输出目录（out_local/ 及 out_xxx/）
+out_local/
+out_*/
+
+# 定时任务（scripts/schedule.py）跑的时候留下的日志
+logs/

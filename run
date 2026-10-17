@@ -1,0 +1,115 @@
+#!/usr/bin/env sh
+# ============================================================
+#  CF IP Pool 一键启动  (Termux / Linux / macOS)
+#  Windows 用 run.bat 或 run.ps1，这里不处理
+# ------------------------------------------------------------
+#  用法:
+#     ./run                 自动检测平台并启动
+#     sh run                没给执行权限时这样跑
+#     ./run termux          明确走 Termux / Linux 原生流程
+#     ./run --check         只自检推送链路，不跑构建
+#     ./run schedule install   装定时任务（到点自己跑）
+#     ./run --target 3     透传参数给 main.py
+#
+#  平台参数: win | termux | linux | mac | auto (默认 auto)
+#  其余参数原样透传给 python main.py
+# ============================================================
+set -u
+
+HERE="$(cd "$(dirname "$0")" && pwd)"
+cd "$HERE" || exit 1
+
+# ---------- 解析平台参数（不是平台参数就原样留作透传） ----------
+PLAT="auto"
+while [ $# -gt 0 ]; do
+    case "${1:-}" in
+        win|windows|Win|Windows|WINDOWS|bat|ps1) PLAT="win";    shift ;;
+        termux|Termux|TERMUX|android|Android)   PLAT="termux"; shift ;;
+        linux|Linux|LINUX|sh|posix|POSIX)       PLAT="posix";  shift ;;
+        mac|macos|Mac|MacOS|darwin|Darwin)      PLAT="mac";    shift ;;
+        check)                                  shift; set -- "--check" "$@" ;;
+        init)                                   shift; set -- "--init"  "$@" ;;
+        schedule)                               shift; set -- "--schedule" "$@" ;;
+        *) break ;;
+    esac
+done
+
+# ---------- 自动检测 ----------
+detect_os() {
+    U="$(uname -s 2>/dev/null || echo unknown)"
+    case "$U" in
+        MINGW*|MSYS*|CYGWIN*|Windows_NT) echo "win" ;;
+        Linux*)
+            # Android / Termux: PREFIX 形如 /data/data/com.termux/files/usr
+            case "${PREFIX:-}" in
+                *com.termux*) echo "termux" ;;
+                *)            echo "linux" ;;
+            esac
+            ;;
+        Darwin*) echo "mac" ;;
+        *)       echo "posix" ;;
+    esac
+}
+
+if [ "$PLAT" = "auto" ]; then
+    PLAT="$(detect_os)"
+fi
+
+# ---------- 找 python ----------
+find_python() {
+    for c in python3 python python3.13 python3.12 python3.11 python3.10 python3.9; do
+        if command -v "$c" >/dev/null 2>&1 && "$c" -c "import sys" >/dev/null 2>&1; then
+            echo "$c"
+            return 0
+        fi
+    done
+    return 1
+}
+
+say_platform() {
+    case "$PLAT" in
+        win)    echo "  platform: Windows (sh 环境) -> 交回 run.bat" ;;
+        termux) echo "  platform: Termux / Android" ;;
+        linux)  echo "  platform: Linux" ;;
+        mac)    echo "  platform: macOS" ;;
+        *)      echo "  platform: $PLAT" ;;
+    esac
+}
+
+# ---------- Windows: 本机是 sh 环境，转交 bat ----------
+if [ "$PLAT" = "win" ]; then
+    say_platform
+    if [ -f "$HERE/run.bat" ]; then
+        if command -v cmd.exe >/dev/null 2>&1; then
+            WIN_BAT="$HERE/run.bat"
+            if command -v cygpath >/dev/null 2>&1; then
+                WIN_BAT="$(cygpath -w "$HERE/run.bat")"
+            fi
+            exec cmd.exe //d //c call "$WIN_BAT" "$@"
+        fi
+        echo "  [FAIL] 没找到 cmd.exe，请直接运行 run.bat 或 run.ps1"
+        exit 2
+    fi
+    echo "  [FAIL] 没找到 run.bat"
+    exit 2
+fi
+
+# ---------- Termux / Linux / macOS: 直接 python ----------
+say_platform
+PY="$(find_python)" || {
+    echo "  [FAIL] 没找到 python，请先安装"
+    echo "         Termux : pkg install python"
+    echo "         Debian : sudo apt install python3"
+    echo "         macOS  : brew install python"
+    exit 127
+}
+
+echo "  python : $($PY -V 2>&1)"
+echo "  entry  : $HERE/main.py"
+[ $# -gt 0 ] && echo "  args   : $*"
+echo ""
+
+exec "$PY" main.py "$@"
+
+
+# 跑完把退出码透传出去（exec 已经保证了）

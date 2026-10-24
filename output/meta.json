@@ -1,15 +1,15 @@
 {
-  "generated_at": "2026-10-24 02:16:22 UTC+8",
-  "generated_at_utc": "2026-10-23 18:16:22 UTC",
+  "generated_at": "2026-10-24 08:13:06 UTC+8",
+  "generated_at_utc": "2026-10-24 00:13:06 UTC",
   "total": 20000,
   "unique_ips": 20000,
   "ports": {
-    "2083": 3414,
-    "443": 3409,
-    "8443": 3335,
-    "2096": 3301,
-    "2087": 3271,
-    "2053": 3270
+    "443": 3385,
+    "2083": 3361,
+    "2053": 3355,
+    "2096": 3355,
+    "8443": 3326,
+    "2087": 3218
   },
   "probe": {
     "mode": "tcp",
@@ -23,7 +23,7 @@
     "recheck": false,
     "carried": 0,
     "recheck_dropped": 0,
-    "newly_probed": 44538,
+    "newly_probed": 44229,
     "state_file": "pool_state.json",
     "loop": 1
   }

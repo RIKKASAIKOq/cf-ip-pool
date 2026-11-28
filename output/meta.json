@@ -1,15 +1,15 @@
 {
-  "generated_at": "2026-11-27 23:45:04 UTC+8",
-  "generated_at_utc": "2026-11-27 15:45:04 UTC",
+  "generated_at": "2026-11-28 08:47:46 UTC+8",
+  "generated_at_utc": "2026-11-28 00:47:46 UTC",
   "total": 20000,
   "unique_ips": 20000,
   "ports": {
-    "2053": 3453,
-    "443": 3373,
-    "8443": 3335,
-    "2087": 3294,
-    "2083": 3286,
-    "2096": 3259
+    "443": 3415,
+    "2087": 3374,
+    "2053": 3343,
+    "2083": 3299,
+    "2096": 3291,
+    "8443": 3278
   },
   "probe": {
     "mode": "tcp",
@@ -23,7 +23,7 @@
     "recheck": false,
     "carried": 0,
     "recheck_dropped": 0,
-    "newly_probed": 44654,
+    "newly_probed": 44250,
     "state_file": null,
     "loop": 1
   }
